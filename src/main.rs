@@ -1,12 +1,19 @@
+// use clap::Command;
+use regex::Regex;
 use std::io;
 use std::io::Write;
 fn main() {
     let mut search_term = String::new();
-    print!("Enter a search term: ");
-    io::stdout().flush().unwrap();
-    io::stdin()
-        .read_line(&mut search_term)
-        .expect("Failed to read search term");
+    #[cfg(read_line)]
+    {
+        print!("Enter a search term: ");
+        io::stdout().flush().unwrap();
+        io::stdin()
+            .read_line(&mut search_term)
+            .expect("Failed to read search term");
+    }
+
+    let re = Regex::new(&search_term.trim()).unwrap();
 
     let quote = "\
 Lorem ipsum dolor sit amet,
@@ -15,6 +22,16 @@ other
 sed do eiusmod tempor incididunt
 ut labore et dolore magna aliqua.";
 
+    println!("REGEX GREP:");
+    for line in quote.lines() {
+        let contains_substring = re.find(line);
+        match contains_substring {
+            Some(_) => println!("{}", line),
+            None => (),
+        }
+    }
+
+    println!("GREP WITH CONTEXT:");
     let ctx_lines = 2;
     let mut lines_to_print: Vec<usize> = Vec::new();
     let mut ctx: Vec<(usize, String)> = Vec::new();
