@@ -1,16 +1,34 @@
-// use clap::Command;
 use regex::Regex;
-use std::io;
-use std::io::Write;
 fn main() {
-    let mut search_term = String::new();
+    // left mutable since the "io version requires that"
+    let mut search_term: String;
     #[cfg(read_line)]
     {
+        use std::io;
+        use std::io::Write;
         print!("Enter a search term: ");
+        search_term = String::new();
         io::stdout().flush().unwrap();
         io::stdin()
             .read_line(&mut search_term)
             .expect("Failed to read search term");
+    }
+    #[cfg(not(read_line))]
+    {
+        use clap::{Arg, Command};
+        let matches = Command::new("grep")
+            .arg(
+                Arg::new("pattern")
+                    .help("The pattern to search for")
+                    .required(true),
+            )
+            .author("Me, me@mail.com")
+            .version("1.0.2")
+            .get_matches();
+        search_term = matches
+            .get_one::<String>("pattern")
+            .expect("No pattern provided")
+            .to_string();
     }
 
     let re = Regex::new(&search_term.trim()).unwrap();
