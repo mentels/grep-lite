@@ -1,7 +1,10 @@
 use regex::Regex;
+use std::{fs::File, io::BufReader};
 fn main() {
     // left mutable since the "io version requires that"
     let mut search_term: String;
+    let input_file: Option<&String>;
+    let quote: &str;
     #[cfg(read_line)]
     {
         use std::io;
@@ -17,28 +20,46 @@ fn main() {
     {
         use clap::{Arg, Command};
         let matches = Command::new("grep")
+            .author("Me, me@mail.com")
+            .version("1.0.2")
             .arg(
                 Arg::new("pattern")
                     .help("The pattern to search for")
                     .required(true),
             )
-            .author("Me, me@mail.com")
-            .version("1.0.2")
+            .arg(Arg::new("input").help("The input file to search"))
             .get_matches();
+
         search_term = matches
             .get_one::<String>("pattern")
             .expect("No pattern provided")
             .to_string();
+
+        input_file = match matches.try_get_one::<String>("input") {
+            Ok(input_file) => {
+                println!("Searching for {} in file {:?}", search_term, input_file);
+                input_file
+            }
+            Err(_) => {
+                println!("Searching for {} in a static string (quote)", search_term);
+                None
+            }
+        }
     }
 
     let re = Regex::new(&search_term.trim()).unwrap();
 
-    let quote = "\
-Lorem ipsum dolor sit amet,
-consectetur adipiscing elit,
-other
-sed do eiusmod tempor incididunt
-ut labore et dolore magna aliqua.";
+    if input_file.is_some() {
+        let f = File::open(input_file.unwrap()).unwrap();
+        quote = BufReader::new(f); // the buffered file reader
+    } else {
+        quote = "\
+    Lorem ipsum dolor sit amet,
+    consectetur adipiscing elit,
+    other
+    sed do eiusmod tempor incididunt
+    ut labore et dolore magna aliqua.";
+    };
 
     println!("REGEX GREP:");
     for line in quote.lines() {
